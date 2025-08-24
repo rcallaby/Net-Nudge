@@ -1,0 +1,74 @@
+# Example configuration for scansched
+
+data_dir: data_dir
+temp_dir: temp_dir
+workers: 8
+global_timeout: "2h"
+env_path: ["/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin"]
+
+
+notifiers:
+  email:
+  enabled: false
+  from: "scanner@example.com"
+  to: ["opsec@example.com"]
+  smtp_host: "smtp.example.com"
+  smtp_port: 587
+  username: "scanner"
+  password: "changeme"
+starttls: true
+slack:
+enabled: false
+webhook: "https://hooks.slack.com/services/T000/B000/XXXX"
+channel: "#alerts"
+webhook:
+enabled: false
+url: "https://your.webhook.endpoint/scans"
+secret: "optional"
+
+
+tools:
+subfinder:
+enabled: true
+path: "subfinder"
+args: ["-all"]
+amass:
+enabled: true
+path: "amass"
+args: []
+httpx:
+enabled: true
+path: "httpx"
+args: ["-status-code","-threads","50"]
+naabu:
+enabled: true
+path: "naabu"
+args: ["-rate","10000"]
+nmap:
+enabled: false
+path: "nmap"
+args: ["-sV","-T4"]
+masscan:
+enabled: false
+path: "masscan"
+args: ["--rate","100000"]
+nuclei:
+enabled: true
+path: "nuclei"
+args: ["-severity","medium,high,critical"]
+
+
+pipelines:
+- name: "External Attack Surface"
+  cron: "0 0 3 * * *" # everyday at 03:00:00
+scope:
+  domains: ["example.com", "example.org"]
+  subdomain_wordlist: ""
+  exclude_domains: []
+cidrs: []
+ports: ["top-1000"]
+stages: ["subdomains","probe","ports","vuln"]
+reports:
+dir: "reports"
+json: true
+csv: true
