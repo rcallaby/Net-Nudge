@@ -10,7 +10,7 @@ type Tool interface {
 }
 
 var (
-	toolRegistry = make(map[string]Tool)
+	toolRegistry = make(map[string]Tool, 8) // Preallocate space for 8 tools; adjust as needed
 	mu           sync.RWMutex
 )
 
@@ -33,7 +33,7 @@ func GetTool(name string) (Tool, bool) {
 func ListTools() []Tool {
 	mu.RLock()
 	defer mu.RUnlock()
-	tools := []Tool{}
+	tools := make([]Tool, 0, len(toolRegistry))
 	for _, t := range toolRegistry {
 		tools = append(tools, t)
 	}
@@ -53,7 +53,7 @@ func (Gobuster) Name() string     { return "gobuster" }
 func (Gobuster) Binary() string   { return "gobuster" }
 func (Gobuster) BaseArgs() []string { return []string{"dir", "-u"} }
 
-// Init registry with defaults
+// InitDefaultTools registers the default set of tools in the registry.
 func InitDefaultTools() {
 	RegisterTool(Nmap{})
 	RegisterTool(Gobuster{})

@@ -2,14 +2,12 @@ package notifier
 
 
 import (
-"context"
-"crypto/tls"
-"fmt"
-"net/smtp"
-"strings"
-
-
-"scansched/internal/config"
+	"context"
+	"crypto/tls"
+	"fmt"
+	"net/smtp"
+	"strings"
+	"scansched/internal/config"
 )
 
 

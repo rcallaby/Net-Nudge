@@ -57,4 +57,5 @@ func parseMasscanLine(line string) (string, string) {
 	}
 	return "", ""
 }
+
 return out, nil

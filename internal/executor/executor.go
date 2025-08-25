@@ -29,12 +29,12 @@ func (pl *Pipeline) runPortsStage(ctx context.Context, st *RunState) error {
 	if err != nil { return err }
 	for host, ports := range res {
 		st.PortsOpen[host] = dedup(append(st.PortsOpen[host], ports...))
-}
+	}
 	return nil
-})
-}
+	})
+	}
 	return pl.ex.Run(ctx, tasks)
-}
+	}
 
 
 func (pl *Pipeline) runVulnStage(ctx context.Context, st *RunState) error {

@@ -2,13 +2,11 @@ package notifier
 
 
 import (
-"bytes"
-"context"
-"encoding/json"
-"net/http"
-
-
-"scansched/internal/config"
+	"bytes"
+	"context"
+	"encoding/json"
+	"net/http"
+	"scansched/internal/config"
 )
 
 
