@@ -1,8 +1,12 @@
 package mocks
 
-import "time"
-
-// MockTool simulates a scanner for testing
+import {
+    "fmt"
+    "time"
+}
+// MockTool is a mock implementation of a scanner tool used for testing purposes.
+// It simulates the behavior of a scanning tool by returning configurable results,
+// allowing tests to verify how code interacts with scanner-like tools without running real scans.
 type MockTool struct {
     Name    string
     Success bool
