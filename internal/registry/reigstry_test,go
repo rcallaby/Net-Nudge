@@ -1,0 +1,21 @@
+package registry
+
+import (
+    "testing"
+    "scan-scheduler/mocks"
+)
+
+func TestRegistry(t *testing.T) {
+    r := NewRegistry()
+    tool := &mocks.MockTool{Name: "mock", Success: true}
+    r.Register(tool)
+
+    got, err := r.Get("mock")
+    if err != nil {
+        t.Fatalf("expected tool registered, got error: %v", err)
+    }
+
+    if got.ToolName() != "mock" {
+        t.Errorf("expected tool 'mock', got %s", got.ToolName())
+    }
+}
