@@ -1,51 +1,126 @@
 package main
 
 import (
-    "context"
-    "flag"
-    "fmt"
-    "os"
-    "os/signal"
-    "syscall"
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"time"
 
-    "scansched/internal/config"
-    "scansched/internal/logging"
-    "scansched/internal/registry"
-    "scansched/internal/scheduler"
+	"github.com/manifoldco/promptui"
+
+	"NetNudge/internal/config"
+	"NetNudge/internal/jobs"
+	"NetNudge/internal/registry"
 )
 
+var asciiBanner = `Net-Nudge
+`
+
 func main() {
-    cfgPath := flag.String("config", "configs/sample.yaml", "Path to YAML configuration")
-    once := flag.Bool("once", false, "Run scheduled jobs once (no cron loop)")
-    validate := flag.Bool("validate", false, "Validate config and exit")
-    flag.Parse()
+	// CLI flags
+	configPath := flag.String("config", "", "Path to configuration YAML file")
+	listTools := flag.Bool("list", false, "List all available tools")
+	flag.Parse()
 
-    log := logging.New()
+	// No arguments? Show menu
+	if len(os.Args) == 1 {
+		runInteractiveMenu()
+		return
+	}
 
-    cfg, err := config.Load(*cfgPath)
-    if err != nil { log.Fatal().Err(err).Msg("failed to load config") }
+	// If --list flag is used
+	if *listTools {
+		fmt.Println("Available Tools:")
+		for _, tool := range registry.ListTools() {
+			fmt.Println(" -", tool)
+		}
+		return
+	}
 
-    if *validate { log.Info().Msg("config OK"); return }
+	// Config file required
+	if *configPath == "" {
+		fmt.Println("Error: --config must be provided")
+		os.Exit(1)
+	}
 
-    ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-    defer cancel()
+	cfg, err := config.LoadConfig(*configPath)
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
 
-    // Registry wires tool adapters and notifiers based on config
-    reg := registry.New(log)
-    if err := reg.WireFromConfig(ctx, cfg); err != nil {
-        log.Fatal().Err(err).Msg("failed to wire registry")
-    }
+	// Register default tools
+	registry.RegisterDefaults()
 
-    sched := scheduler.New(log, reg, cfg)
+	// Create job scheduler
+	scheduler := jobs.NewScheduler()
 
-    if *once {
-        if err := sched.RunOnce(ctx); err != nil { log.Fatal().Err(err).Msg("run-once failed") }
-        fmt.Println("Done")
-        return
-    }
+	// Schedule jobs from config
+	for _, job := range cfg.Jobs {
+		if err := scheduler.ScheduleJob(job); err != nil {
+			log.Printf("Failed to schedule job %s: %v", job.Name, err)
+		}
+	}
 
-    if err := sched.Run(ctx); err != nil {
-        log.Fatal().Err(err).Msg("scheduler failed")
-    }
+	// Start jobs
+	scheduler.Run()
 }
+
+// Interactive menu when no args are provided
+func runInteractiveMenu() {
+	fmt.Println(asciiBanner)
+
+	menu := promptui.Select{
+		Label: "Select an option",
+		Items: []string{
+			"Run scheduled jobs (from config.yaml)",
+			"List available tools",
+			"Exit",
+		},
+	}
+
+	_, choice, err := menu.Run()
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return
+	}
+
+	switch choice {
+	case "Run scheduled jobs (from config.yaml)":
+		// Ask for config file path interactively
+		prompt := promptui.Prompt{
+			Label:   "Enter config file path",
+			Default: "config.yaml",
+		}
+		configPath, _ := prompt.Run()
+
+		cfg, err := config.LoadConfig(configPath)
+		if err != nil {
+			log.Fatalf("failed to load config: %v", err)
+		}
+
+		registry.RegisterDefaults()
+		scheduler := jobs.NewScheduler()
+
+		for _, job := range cfg.Jobs {
+			if err := scheduler.ScheduleJob(job); err != nil {
+				log.Printf("Failed to schedule job %s: %v", job.Name, err)
+			}
+		}
+		scheduler.Run()
+
+	case "List available tools":
+		registry.RegisterDefaults()
+		fmt.Println("Available Tools:")
+		for _, tool := range registry.ListTools() {
+			fmt.Println(" -", tool)
+		}
+
+	case "Exit":
+		fmt.Println("Goodbye!")
+		time.Sleep(time.Second)
+		os.Exit(0)
+	}
+}
+
 
