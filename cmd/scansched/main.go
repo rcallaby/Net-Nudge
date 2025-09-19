@@ -14,8 +14,7 @@ import (
 	"NetNudge/internal/registry"
 )
 
-var asciiBanner = `Net-Nudge
-`
+var asciiBanner = `Net-Nudge`
 
 func main() {
 	// CLI flags
